@@ -152,13 +152,13 @@ def configure_teledrive_android() -> None:
             if settings_file.suffix == ".kts":
                 tail = tail.replace(
                     "mavenCentral()",
-                    'mavenCentral()\\n        maven("https://jitpack.io")',
+                    'mavenCentral()\n        maven("https://jitpack.io")',
                     1,
                 )
             else:
                 tail = tail.replace(
                     "mavenCentral()",
-                    "mavenCentral()\\n        maven { url 'https://jitpack.io' }",
+                    "mavenCentral()\n        maven { url 'https://jitpack.io' }",
                     1,
                 )
             settings_file.write_text(head + tail, encoding="utf-8")
@@ -169,13 +169,13 @@ def configure_teledrive_android() -> None:
             if root_gradle.suffix == ".kts":
                 gradle_root = gradle_root.replace(
                     "mavenCentral()",
-                    'mavenCentral()\\n        maven("https://jitpack.io")',
+                    'mavenCentral()\n        maven("https://jitpack.io")',
                     1,
                 )
             else:
                 gradle_root = gradle_root.replace(
                     "mavenCentral()",
-                    "mavenCentral()\\n        maven { url 'https://jitpack.io' }",
+                    "mavenCentral()\n        maven { url 'https://jitpack.io' }",
                     1,
                 )
             if gradle_root == root_gradle.read_text(encoding="utf-8"):
@@ -200,7 +200,7 @@ def configure_teledrive_android() -> None:
     if "com.github.tdlibx:td:" not in gradle:
         gradle = gradle.replace(
             "dependencies {",
-            "dependencies {\\n    " + dependency,
+            "dependencies {\n    " + dependency,
             1,
         )
         app_gradle.write_text(gradle, encoding="utf-8")
