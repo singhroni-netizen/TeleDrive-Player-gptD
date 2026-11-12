@@ -144,9 +144,9 @@ def configure_teledrive_android() -> None:
     if "io.github.tdlibx:td-android:" not in gradle:
         gradle = (
             gradle.rstrip()
-            + "\\n\\ndependencies {\\n    "
+            + "\n\ndependencies {\n    "
             + dependency
-            + "\\n}\\n"
+            + "\n}\n"
         )
 
     app_gradle.write_text(gradle, encoding="utf-8")
