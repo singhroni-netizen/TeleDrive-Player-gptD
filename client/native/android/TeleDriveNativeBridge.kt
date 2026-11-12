@@ -164,8 +164,6 @@ class TeleDriveNativeBridge(
         if (update is TdApi.UpdateAuthorizationState) {
             when (val auth = update.authorizationState) {
                 is TdApi.AuthorizationStateWaitTdlibParameters -> sendParameters()
-                is TdApi.AuthorizationStateWaitEncryptionKey ->
-                    tdClient?.send(TdApi.CheckDatabaseEncryptionKey(databaseKey())) { }
                 is TdApi.AuthorizationStateWaitPhoneNumber -> setState("waitingForPhoneNumber")
                 is TdApi.AuthorizationStateWaitCode ->
                     setState("waitingForCode", "Telegram sent a code to ${auth.codeInfo.phoneNumber}")
