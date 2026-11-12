@@ -71,7 +71,10 @@ class _TeleDriveScreenState extends State<TeleDriveScreen> {
     try {
       final state = await TeleDriveNative.getAuthState();
       if (!mounted) return;
-      setState(() => _auth = state);
+      setState(() {
+        _auth = state;
+        if (state['state'] != 'notConfigured') _showApiCredentials = false;
+      });
       if (state['state'] == 'ready') await _loadDrives();
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
