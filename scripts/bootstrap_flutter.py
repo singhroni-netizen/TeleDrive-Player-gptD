@@ -99,6 +99,81 @@ def configure_manifest() -> None:
     manifest.write_text(content, encoding="utf-8")
 
 
+
+def configure_teledrive_android() -> None:
+    """Install the local TDLib bridge into the freshly generated Android runner."""
+    native_dir = ROOT / "client" / "native" / "android"
+    package_dir = (
+        CLIENT / "android" / "app" / "src" / "main" / "kotlin"
+        / "com" / "teledriveplayer" / "tele_drive_player"
+    )
+    package_dir.mkdir(parents=True, exist_ok=True)
+
+    for filename in ("MainActivity.kt", "TeleDriveNativeBridge.kt"):
+        source = native_dir / filename
+        if not source.exists():
+            raise SystemExit(f"Native TeleDrive source not found: {source}")
+        shutil.copy2(source, package_dir / filename)
+
+    settings_file = next(
+        (
+            candidate
+            for candidate in (
+                CLIENT / "android" / "settings.gradle.kts",
+                CLIENT / "android" / "settings.gradle",
+            )
+            if candidate.exists()
+        ),
+        None,
+    )
+    if settings_file is None:
+        raise SystemExit("Android Gradle settings file not found")
+
+    settings = settings_file.read_text(encoding="utf-8")
+    if "jitpack.io" not in settings:
+        marker = "dependencyResolutionManagement"
+        if marker not in settings:
+            raise SystemExit("Could not find dependencyResolutionManagement in Android settings")
+        start = settings.index(marker)
+        head, tail = settings[:start], settings[start:]
+        if settings_file.suffix == ".kts":
+            tail = tail.replace(
+                "mavenCentral()",
+                'mavenCentral()\\n        maven("https://jitpack.io")',
+                1,
+            )
+        else:
+            tail = tail.replace(
+                "mavenCentral()",
+                "mavenCentral()\\n        maven { url 'https://jitpack.io' }",
+                1,
+            )
+        settings_file.write_text(head + tail, encoding="utf-8")
+
+    app_gradle = next(
+        (
+            candidate
+            for candidate in (
+                CLIENT / "android" / "app" / "build.gradle.kts",
+                CLIENT / "android" / "app" / "build.gradle",
+            )
+            if candidate.exists()
+        ),
+        None,
+    )
+    if app_gradle is None:
+        raise SystemExit("Android app Gradle file not found")
+    gradle = app_gradle.read_text(encoding="utf-8")
+    dependency = 'implementation("com.github.tdlibx:td:1.8.56")'
+    if "com.github.tdlibx:td:" not in gradle:
+        gradle = gradle.replace(
+            "dependencies {",
+            "dependencies {\\n    " + dependency,
+            1,
+        )
+        app_gradle.write_text(gradle, encoding="utf-8")
+
+
 def main() -> None:
     if not (CLIENT / "pubspec.yaml").exists():
         raise SystemExit("client/pubspec.yaml not found")
@@ -137,6 +212,7 @@ def main() -> None:
 
     configure_android_lint()
     configure_manifest()
+    configure_teledrive_android()
 
     print("Flutter platform folders generated successfully.")
 
