@@ -196,6 +196,12 @@ def configure_teledrive_android() -> None:
     if app_gradle is None:
         raise SystemExit("Android app Gradle file not found")
     gradle = app_gradle.read_text(encoding="utf-8")
+    # TeleDrive's Android engine targets API 26+.
+    if app_gradle.suffix == ".kts":
+        gradle = gradle.replace("minSdk = flutter.minSdkVersion", "minSdk = 26", 1)
+    else:
+        gradle = gradle.replace("minSdkVersion flutter.minSdkVersion", "minSdkVersion 26", 1)
+
     dependency = 'implementation("com.github.tdlibx:td:1.8.56")'
     if "com.github.tdlibx:td:" not in gradle:
         gradle = gradle.replace(
