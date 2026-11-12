@@ -249,7 +249,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (selected != null) { _rate = selected; await _player.setRate(selected); _setOverlay('${selected}×'); }
   }
 
-  Future<void> _sleepTimer() async {
+  Future<void> _showSleepTimer() async {
     final minutes = await showModalBottomSheet<int>(context: context, builder: (_) => SafeArea(child: Wrap(children: [
       const Padding(padding: EdgeInsets.all(16), child: Text('Sleep timer', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
       ...[15, 30, 45, 60, 90].map((v) => ListTile(title: Text('$v minutes'), onTap: () => Navigator.pop(context, v))),
@@ -337,7 +337,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           IconButton(tooltip: 'Subtitles', onPressed: _chooseSubtitle, icon: const Icon(Icons.subtitles_outlined)),
           IconButton(tooltip: 'Playback speed', onPressed: _selectSpeed, icon: const Icon(Icons.speed)),
           IconButton(tooltip: 'A–B repeat', onPressed: _abRepeat, color: _loopA != null ? const Color(0xFFE50914) : null, icon: const Icon(Icons.repeat)),
-          IconButton(tooltip: 'Sleep timer', onPressed: _sleepTimer, icon: const Icon(Icons.bedtime_outlined)),
+          IconButton(tooltip: 'Sleep timer', onPressed: _showSleepTimer, icon: const Icon(Icons.bedtime_outlined)),
           if (widget.item.size > 800 * 1024 * 1024 && _compressorBot != null) IconButton(tooltip: 'Open compressor bot', onPressed: _openCompressorBot, icon: const Icon(Icons.compress)),
           IconButton(tooltip: 'Volume boost', onPressed: () async { _volume = (_volume + 10).clamp(0, 200).toDouble(); await _setPlayerVolume(_volume); _setOverlay('Volume ${_volume.round()}%'); }, icon: const Icon(Icons.volume_up)),
         ]),
