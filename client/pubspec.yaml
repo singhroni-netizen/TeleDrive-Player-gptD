@@ -1,0 +1,26 @@
+name: tele_drive_player
+description: A modular private media catalog and player for Android and Windows.
+publish_to: "none"
+version: 0.1.0+1
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.5.0
+  shared_preferences: ^2.5.3
+  file_picker: ^10.3.3
+  media_kit: ^1.2.6
+  media_kit_video: ^2.0.1
+  media_kit_libs_video: ^1.0.7
+  screen_brightness: ^2.1.11
+  wakelock_plus: ^1.3.3
+  url_launcher: ^6.3.3
+  intl: ^0.20.2
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true

@@ -1,0 +1,96 @@
+name: CI and app builds
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install backend dependencies
+        run: pip install -r requirements.txt
+        working-directory: backend
+      - name: Run backend tests
+        run: python -m unittest discover -s tests -v
+        working-directory: backend
+
+  android-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate native platform folders
+        run: python scripts/bootstrap_flutter.py
+      - name: Resolve Flutter packages
+        run: flutter pub get
+        working-directory: client
+      - name: Build release APK
+        run: flutter build apk --release --split-per-abi
+        working-directory: client
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tele-drive-player-android-apk
+          path: client/build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
+
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate native platform folders
+        run: python scripts/bootstrap_flutter.py
+      - name: Resolve Flutter packages
+        run: flutter pub get
+        working-directory: client
+      - name: Build Windows release
+        run: flutter build windows --release
+        working-directory: client
+      - name: Package Windows app
+        shell: pwsh
+        run: Compress-Archive -Path client/build/windows/x64/runner/Release/* -DestinationPath tele-drive-player-windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tele-drive-player-windows
+          path: tele-drive-player-windows.zip
+          if-no-files-found: error
+
+  publish-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [backend-tests, android-build, windows-build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: tele-drive-player-*
+          path: release-assets
+          merge-multiple: true
+      - name: Publish GitHub release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: release-assets/**/*
