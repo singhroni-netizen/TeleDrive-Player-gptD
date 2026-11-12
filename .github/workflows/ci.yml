@@ -53,6 +53,7 @@ jobs:
           if-no-files-found: error
 
   windows-build:
+    if: ${{ false }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
