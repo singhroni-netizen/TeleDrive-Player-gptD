@@ -43,8 +43,8 @@ jobs:
       - name: Resolve Flutter packages
         run: flutter pub get
         working-directory: client
-      - name: Verify TDLib Android AAR on release compile classpath
-        run: ./gradlew :app:dependencyInsight --dependency io.github.tdlibx:td-android --configuration releaseCompileClasspath
+      - name: Verify upstream TeleDrive TDLib AAR on release compile classpath
+        run: ./gradlew :app:dependencyInsight --dependency com.github.tdlibx:td --configuration releaseCompileClasspath
         working-directory: client/android
       - name: Build release APK
         run: flutter build apk --release --split-per-abi
