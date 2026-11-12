@@ -7,6 +7,7 @@ import 'player_screen.dart';
 import 'settings_screen.dart';
 import 'virtual_folders_screen.dart';
 import 'sources_screen.dart';
+import 'teledrive_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.api});
@@ -91,6 +92,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('TELEDRIVE', style: TextStyle(color: Color(0xFFE50914), fontWeight: FontWeight.w900, letterSpacing: 1.2)),
         actions: [
+          IconButton(tooltip: 'Open TeleDrive storage', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TeleDriveScreen(onPlay: _play))), icon: const Icon(Icons.cloud_done_outlined, color: Color(0xFFE50914))),
           IconButton(tooltip: 'Virtual folders', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VirtualFoldersScreen(api: widget.api, onPlay: _play))), icon: const Icon(Icons.folder_copy_outlined)),
           IconButton(tooltip: 'Data sources', onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => SourcesScreen(api: widget.api))); _load(); }, icon: const Icon(Icons.cloud_queue_outlined)),
           IconButton(tooltip: 'Settings', onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsScreen(api: widget.api))); _load(); }, icon: const Icon(Icons.settings_outlined)),
