@@ -143,6 +143,38 @@ def configure_teledrive_android() -> None:
             raise SystemExit(f"Native TeleDrive source not found: {source}")
         shutil.copy2(source, package_dir / filename)
 
+    # Use the same JitPack TDLib AAR coordinate as the upstream TeleDrive app.
+    root_gradle = next(
+        (
+            candidate
+            for candidate in (
+                CLIENT / "android" / "build.gradle.kts",
+                CLIENT / "android" / "build.gradle",
+            )
+            if candidate.exists()
+        ),
+        None,
+    )
+    if root_gradle is None:
+        raise SystemExit("Android root Gradle file not found")
+    root_content = root_gradle.read_text(encoding="utf-8")
+    if "jitpack.io" not in root_content:
+        if root_gradle.suffix == ".kts":
+            updated_root = root_content.replace(
+                "mavenCentral()",
+                'mavenCentral()\\n        maven("https://jitpack.io")',
+                1,
+            )
+        else:
+            updated_root = root_content.replace(
+                "mavenCentral()",
+                "mavenCentral()\\n        maven { url 'https://jitpack.io' }",
+                1,
+            )
+        if updated_root == root_content:
+            raise SystemExit("Could not add JitPack to Android root repositories")
+        root_gradle.write_text(updated_root, encoding="utf-8")
+
     app_gradle = next(
         (
             candidate
@@ -168,7 +200,7 @@ def configure_teledrive_android() -> None:
         )
 
     # Maven Central hosts the Android AAR; no JitPack or backend service is needed.
-    dependency = 'implementation("io.github.tdlibx:td-android:1.8.56-RC9")'
+    dependency = 'implementation("com.github.tdlibx:td:1.8.56")'
     if "io.github.tdlibx:td-android:" not in gradle:
         gradle = (
             gradle.rstrip()
