@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/media_item.dart';
 import '../services/api_client.dart';
+import '../services/teledrive_native.dart';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key, required this.api, required this.item});
@@ -49,7 +50,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     WakelockPlus.enable();
-    _loadCompressorBot();
+    if (widget.item.sourceId != 'teledrive-native') _loadCompressorBot();
     _start();
     _positionSub = _player.stream.position.listen((value) {
       if (!mounted) return;
@@ -94,17 +95,24 @@ class _PlayerScreenState extends State<PlayerScreen> {
         // libmpv supports volume amplification above the normal 100% ceiling.
         await platform.command(['set', 'volume-max', '200']);
       }
-      await _player.open(Media(widget.api.streamUrl(widget.item), httpHeaders: {
-        if (widget.api.apiKey.isNotEmpty) 'X-API-Key': widget.api.apiKey,
+      final isNativeTeleDrive = widget.item.sourceId == 'teledrive-native';
+      final streamUrl = isNativeTeleDrive
+          ? await TeleDriveNative.getStreamUrl(widget.item.id)
+          : widget.api.streamUrl(widget.item);
+      await _player.open(Media(streamUrl, httpHeaders: {
+        if (!isNativeTeleDrive && widget.api.apiKey.isNotEmpty)
+          'X-API-Key': widget.api.apiKey,
         'Accept': '*/*',
       }));
-      final progress = await widget.api.progress();
-      final saved = progress[widget.item.key];
-      if (saved is Map && (saved['position_ms'] as num? ?? 0) > 10000) {
-        final savedPos = (saved['position_ms'] as num).toInt();
-        final savedDuration = (saved['duration_ms'] as num?)?.toInt() ?? 0;
-        if (savedDuration == 0 || savedPos < savedDuration - 15000) {
-          await _player.seek(Duration(milliseconds: savedPos));
+      if (!isNativeTeleDrive) {
+        final progress = await widget.api.progress();
+        final saved = progress[widget.item.key];
+        if (saved is Map && (saved['position_ms'] as num? ?? 0) > 10000) {
+          final savedPos = (saved['position_ms'] as num).toInt();
+          final savedDuration = (saved['duration_ms'] as num?)?.toInt() ?? 0;
+          if (savedDuration == 0 || savedPos < savedDuration - 15000) {
+            await _player.seek(Duration(milliseconds: savedPos));
+          }
         }
       }
       if (mounted) setState(() => _busy = false);
@@ -124,6 +132,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   void _saveProgress() {
+    if (widget.item.sourceId == 'teledrive-native') return;
     if (_duration.inMilliseconds <= 0) return;
     _lastSavedMs = _position.inMilliseconds;
     widget.api.saveProgress(widget.item.key, _position.inMilliseconds, _duration.inMilliseconds).catchError((_) {});
