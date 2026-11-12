@@ -126,29 +126,61 @@ def configure_teledrive_android() -> None:
         ),
         None,
     )
-    if settings_file is None:
-        raise SystemExit("Android Gradle settings file not found")
+    root_gradle = next(
+        (
+            candidate
+            for candidate in (
+                CLIENT / "android" / "build.gradle.kts",
+                CLIENT / "android" / "build.gradle",
+            )
+            if candidate.exists()
+        ),
+        None,
+    )
 
-    settings = settings_file.read_text(encoding="utf-8")
+    # Flutter runner templates differ: some keep dependency repositories in
+    # settings.gradle, while Flutter 3.35 places them in the root build file.
+    if settings_file is not None:
+        settings = settings_file.read_text(encoding="utf-8")
+    else:
+        settings = ""
+
     if "jitpack.io" not in settings:
-        marker = "dependencyResolutionManagement"
-        if marker not in settings:
-            raise SystemExit("Could not find dependencyResolutionManagement in Android settings")
-        start = settings.index(marker)
-        head, tail = settings[:start], settings[start:]
-        if settings_file.suffix == ".kts":
-            tail = tail.replace(
-                "mavenCentral()",
-                'mavenCentral()\\n        maven("https://jitpack.io")',
-                1,
-            )
+        if "dependencyResolutionManagement" in settings:
+            start = settings.index("dependencyResolutionManagement")
+            head, tail = settings[:start], settings[start:]
+            if settings_file.suffix == ".kts":
+                tail = tail.replace(
+                    "mavenCentral()",
+                    'mavenCentral()\\n        maven("https://jitpack.io")',
+                    1,
+                )
+            else:
+                tail = tail.replace(
+                    "mavenCentral()",
+                    "mavenCentral()\\n        maven { url 'https://jitpack.io' }",
+                    1,
+                )
+            settings_file.write_text(head + tail, encoding="utf-8")
         else:
-            tail = tail.replace(
-                "mavenCentral()",
-                "mavenCentral()\\n        maven { url 'https://jitpack.io' }",
-                1,
-            )
-        settings_file.write_text(head + tail, encoding="utf-8")
+            if root_gradle is None:
+                raise SystemExit("Could not find Android dependency repositories")
+            gradle_root = root_gradle.read_text(encoding="utf-8")
+            if root_gradle.suffix == ".kts":
+                gradle_root = gradle_root.replace(
+                    "mavenCentral()",
+                    'mavenCentral()\\n        maven("https://jitpack.io")',
+                    1,
+                )
+            else:
+                gradle_root = gradle_root.replace(
+                    "mavenCentral()",
+                    "mavenCentral()\\n        maven { url 'https://jitpack.io' }",
+                    1,
+                )
+            if gradle_root == root_gradle.read_text(encoding="utf-8"):
+                raise SystemExit("Could not add JitPack to Android root repositories")
+            root_gradle.write_text(gradle_root, encoding="utf-8")
 
     app_gradle = next(
         (
