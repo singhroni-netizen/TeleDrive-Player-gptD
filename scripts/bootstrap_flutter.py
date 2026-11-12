@@ -40,12 +40,26 @@ def main() -> None:
         raise SystemExit("Generated Android app Gradle file was not found")
     gradle_text = gradle_file.read_text(encoding="utf-8")
     lint_guard = (
-        "\\n// Work around Android Lint parser crash; this does not disable APK compilation.\\n"
-        "tasks.configureEach { task ->\\n"
-        "    if (task.name.toLowerCase().contains('lint')) { task.enabled = false }\\n"
-        "}\\n"
-    )
-    if "Work around Android Lint parser crash" not in gradle_text:
+            if "Work around Android Lint parser crash" not in gradle_text:
+        if gradle_file.suffix == ".kts":
+            lint_guard = """
+// Work around Android Lint parser crash.
+// This does not disable APK compilation.
+tasks.configureEach {
+    if (name.contains("lint", ignoreCase = true)) {
+        enabled = false
+    }
+}
+"""
+        else:
+            lint_guard = """
+// Work around Android Lint parser crash.
+tasks.configureEach { task ->
+    if (task.name.toLowerCase().contains('lint')) {
+        task.enabled = false
+    }
+}
+"""
         gradle_file.write_text(gradle_text + lint_guard, encoding="utf-8")
 
     manifest = CLIENT / "android" / "app" / "src" / "main" / "AndroidManifest.xml"
