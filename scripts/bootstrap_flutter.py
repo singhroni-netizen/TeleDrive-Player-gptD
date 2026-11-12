@@ -96,6 +96,34 @@ def configure_manifest() -> None:
             1,
         )
 
+    # TDLib's AAR also declares an application label. Keep the Flutter app's
+    # label and resolve the manifest merger conflict explicitly.
+    if "xmlns:tools=" not in content:
+        content = content.replace(
+            "<manifest",
+            '<manifest xmlns:tools="http://schemas.android.com/tools"',
+            1,
+        )
+
+    application_start = content.find("<application")
+    if application_start < 0:
+        raise SystemExit("Application element not found in AndroidManifest.xml")
+    application_end = content.find(">", application_start)
+    if application_end < 0:
+        raise SystemExit("Malformed application element in AndroidManifest.xml")
+    application_tag = content[application_start:application_end]
+    if "tools:replace=" not in application_tag:
+        application_tag += ' tools:replace="android:label"'
+    elif "android:label" not in application_tag.split("tools:replace=", 1)[1]:
+        application_tag = application_tag.replace(
+            'tools:replace="', 'tools:replace="android:label,', 1
+        )
+    content = (
+        content[:application_start]
+        + application_tag
+        + content[application_end:]
+    )
+
     manifest.write_text(content, encoding="utf-8")
 
 
