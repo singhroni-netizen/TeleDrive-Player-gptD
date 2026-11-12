@@ -43,6 +43,9 @@ jobs:
       - name: Resolve Flutter packages
         run: flutter pub get
         working-directory: client
+      - name: Verify TDLib dependency on Android compile classpath
+        run: ./gradlew :app:dependencyInsight --dependency com.github.tdlibx:td --configuration releaseCompileClasspath
+        working-directory: client/android
       - name: Build release APK
         run: flutter build apk --release --split-per-abi
         working-directory: client
