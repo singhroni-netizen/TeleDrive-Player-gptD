@@ -260,7 +260,7 @@ class TeleDriveNativeBridge(
                 if (!type.isChannel || !(chat.title == "TeleDrive" || chat.title.startsWith("TeleDrive "))) return@runCatching null
                 val group = send(TdApi.GetSupergroup(type.supergroupId))
                 if (group.status !is TdApi.ChatMemberStatusCreator ||
-                    !group.usernames?.activeUsernames.isNullOrEmpty().not()
+                    !group.usernames?.activeUsernames.isNullOrEmpty()
                 ) return@runCatching null
                 mapOf("chatId" to chatId, "title" to chat.title)
             }.getOrNull()
