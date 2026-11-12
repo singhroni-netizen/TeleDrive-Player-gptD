@@ -101,7 +101,7 @@ def configure_manifest() -> None:
 
 
 def configure_teledrive_android() -> None:
-    """Install the local TDLib bridge into the freshly generated Android runner."""
+    """Install the native TDLib bridge into the generated Android runner."""
     native_dir = ROOT / "client" / "native" / "android"
     package_dir = (
         CLIENT / "android" / "app" / "src" / "main" / "kotlin"
@@ -114,73 +114,6 @@ def configure_teledrive_android() -> None:
         if not source.exists():
             raise SystemExit(f"Native TeleDrive source not found: {source}")
         shutil.copy2(source, package_dir / filename)
-
-    settings_file = next(
-        (
-            candidate
-            for candidate in (
-                CLIENT / "android" / "settings.gradle.kts",
-                CLIENT / "android" / "settings.gradle",
-            )
-            if candidate.exists()
-        ),
-        None,
-    )
-    root_gradle = next(
-        (
-            candidate
-            for candidate in (
-                CLIENT / "android" / "build.gradle.kts",
-                CLIENT / "android" / "build.gradle",
-            )
-            if candidate.exists()
-        ),
-        None,
-    )
-
-    # Flutter runner templates differ: some keep dependency repositories in
-    # settings.gradle, while Flutter 3.35 places them in the root build file.
-    if settings_file is not None:
-        settings = settings_file.read_text(encoding="utf-8")
-    else:
-        settings = ""
-
-    if "jitpack.io" not in settings:
-        if "dependencyResolutionManagement" in settings:
-            start = settings.index("dependencyResolutionManagement")
-            head, tail = settings[:start], settings[start:]
-            if settings_file.suffix == ".kts":
-                tail = tail.replace(
-                    "mavenCentral()",
-                    'mavenCentral()\n        maven("https://jitpack.io")',
-                    1,
-                )
-            else:
-                tail = tail.replace(
-                    "mavenCentral()",
-                    "mavenCentral()\n        maven { url 'https://jitpack.io' }",
-                    1,
-                )
-            settings_file.write_text(head + tail, encoding="utf-8")
-        else:
-            if root_gradle is None:
-                raise SystemExit("Could not find Android dependency repositories")
-            gradle_root = root_gradle.read_text(encoding="utf-8")
-            if root_gradle.suffix == ".kts":
-                gradle_root = gradle_root.replace(
-                    "mavenCentral()",
-                    'mavenCentral()\n        maven("https://jitpack.io")',
-                    1,
-                )
-            else:
-                gradle_root = gradle_root.replace(
-                    "mavenCentral()",
-                    "mavenCentral()\n        maven { url 'https://jitpack.io' }",
-                    1,
-                )
-            if gradle_root == root_gradle.read_text(encoding="utf-8"):
-                raise SystemExit("Could not add JitPack to Android root repositories")
-            root_gradle.write_text(gradle_root, encoding="utf-8")
 
     app_gradle = next(
         (
@@ -195,21 +128,29 @@ def configure_teledrive_android() -> None:
     )
     if app_gradle is None:
         raise SystemExit("Android app Gradle file not found")
+
     gradle = app_gradle.read_text(encoding="utf-8")
-    # TeleDrive's Android engine targets API 26+.
+
+    # TeleDrive's Android engine uses Android Keystore and targets API 26+.
     if app_gradle.suffix == ".kts":
         gradle = gradle.replace("minSdk = flutter.minSdkVersion", "minSdk = 26", 1)
     else:
-        gradle = gradle.replace("minSdkVersion flutter.minSdkVersion", "minSdkVersion 26", 1)
+        gradle = gradle.replace(
+            "minSdkVersion flutter.minSdkVersion", "minSdkVersion 26", 1
+        )
 
-    dependency = 'implementation("com.github.tdlibx:td:1.8.56")'
-    if "com.github.tdlibx:td:" not in gradle:
+    # Maven Central hosts the Android AAR; no JitPack or backend service is needed.
+    dependency = 'implementation("io.github.tdlibx:td-android:1.8.56-RC9")'
+    if "io.github.tdlibx:td-android:" not in gradle:
+        if "dependencies {" not in gradle:
+            raise SystemExit("Could not find app dependencies block")
         gradle = gradle.replace(
             "dependencies {",
-            "dependencies {\n    " + dependency,
+            "dependencies {\\n    " + dependency,
             1,
         )
-        app_gradle.write_text(gradle, encoding="utf-8")
+
+    app_gradle.write_text(gradle, encoding="utf-8")
 
 
 def main() -> None:
