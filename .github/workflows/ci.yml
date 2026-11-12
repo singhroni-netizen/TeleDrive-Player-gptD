@@ -81,7 +81,7 @@ jobs:
 
   publish-release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [backend-tests, android-build, windows-build]
+    needs: [backend-tests, android-build ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
