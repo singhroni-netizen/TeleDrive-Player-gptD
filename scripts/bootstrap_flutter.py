@@ -142,12 +142,11 @@ def configure_teledrive_android() -> None:
     # Maven Central hosts the Android AAR; no JitPack or backend service is needed.
     dependency = 'implementation("io.github.tdlibx:td-android:1.8.56-RC9")'
     if "io.github.tdlibx:td-android:" not in gradle:
-        if "dependencies {" not in gradle:
-            raise SystemExit("Could not find app dependencies block")
-        gradle = gradle.replace(
-            "dependencies {",
-            "dependencies {\\n    " + dependency,
-            1,
+        gradle = (
+            gradle.rstrip()
+            + "\\n\\ndependencies {\\n    "
+            + dependency
+            + "\\n}\\n"
         )
 
     app_gradle.write_text(gradle, encoding="utf-8")
