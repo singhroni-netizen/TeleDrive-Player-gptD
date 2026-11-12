@@ -162,13 +162,13 @@ def configure_teledrive_android() -> None:
         if root_gradle.suffix == ".kts":
             updated_root = root_content.replace(
                 "mavenCentral()",
-                'mavenCentral()\\n        maven("https://jitpack.io")',
+                'mavenCentral()\n        maven("https://jitpack.io")',
                 1,
             )
         else:
             updated_root = root_content.replace(
                 "mavenCentral()",
-                "mavenCentral()\\n        maven { url 'https://jitpack.io' }",
+                "mavenCentral()\n        maven { url 'https://jitpack.io' }",
                 1,
             )
         if updated_root == root_content:
